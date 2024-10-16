@@ -20,7 +20,8 @@ compile-commander -i "/usr/include"
 After cloning:
 
 ```
+cd compile-commander
 cargo build
-cargo install
+cargo install --path .
 ```
 :)
