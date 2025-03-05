@@ -21,12 +21,24 @@ struct Args {
     /// removes the specified include directory from all compilation units in the database
     #[arg(short = 'd', long)]
     delete_include: Vec<String>,
+
+    /// adds the specified compile arguments to all compilation units in the database
+    #[arg(long)]
+    add_arg: Vec<String>,
+
+    /// removes the specified compile arguments from all compilation units in the database
+    #[arg(long)]
+    delete_arg: Vec<String>,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    if args.add_include.is_empty() && args.delete_include.is_empty() {
+    if args.add_include.is_empty()
+        && args.delete_include.is_empty()
+        && args.add_arg.is_empty()
+        && args.delete_arg.is_empty()
+    {
         println!("No modifications requested, exiting.");
         return Ok(());
     }
@@ -90,14 +102,25 @@ fn main() -> Result<()> {
         };
 
         // modify the compile command as specified by the command line arguments (e.g add & remove include dirs)
-        for include in args.add_include.iter() {
+        for include in &args.add_include {
             if let Some(index) = compile_command.find("-I") {
                 compile_command.insert_str(index, &format!(" -I{} ", include));
             }
         }
 
-        for include in args.delete_include.iter() {
+        for include in &args.delete_include {
             let target_str = format!(" -I{}", include);
+            if let Some(start_idx) = compile_command.find(&target_str) {
+                compile_command.replace_range(start_idx..start_idx + target_str.len(), "");
+            }
+        }
+
+        for arg in &args.add_arg {
+            compile_command.push_str(&format!(" -{}", arg));
+        }
+
+        for arg in &args.delete_arg {
+            let target_str = format!(" -{}", arg);
             if let Some(start_idx) = compile_command.find(&target_str) {
                 compile_command.replace_range(start_idx..start_idx + target_str.len(), "");
             }
